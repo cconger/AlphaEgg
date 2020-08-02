@@ -1,4 +1,4 @@
-from tm_env import TrackManiaEnv
+from agent_env import TMAgentEnv
 
 import time
 import os
@@ -51,13 +51,13 @@ rb_checkpoint_interval = 5000
 
 
 def run():
-  with TrackManiaEnv() as env:
+  with TMAgentEnv() as env:
     tf_env = tf_py_environment.TFPyEnvironment(env)
-    fc_layer_params = (100,)
     q_net = q_network.QNetwork(
         tf_env.observation_spec(),
         tf_env.action_spec(),
-        fc_layer_params=fc_layer_params
+        conv_layer_params=((32, 8, 4), (64, 4, 2), (128, 3, 1)),
+        fc_layer_params=(300, 100),
     )
 
     optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
@@ -65,7 +65,7 @@ def run():
     global_counter = tf.compat.v1.train.get_or_create_global_step()
     #train_step_counter = tf.Variable(0)
 
-    agent = dqn_agent.DqnAgent(
+    agent = dqn_agent.DdqnAgent(
         tf_env.time_step_spec(),
         tf_env.action_spec(),
         q_network=q_net,
