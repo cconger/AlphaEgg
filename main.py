@@ -10,6 +10,7 @@ import tensorflow as tf
 from tf_agents.agents.dqn import dqn_agent
 from tf_agents.environments import tf_py_environment
 from tf_agents.drivers import dynamic_step_driver
+from tf_agents.drivers import dynamic_episode_driver
 from tf_agents.eval import metric_utils
 from tf_agents.networks import q_network
 from tf_agents.policies import random_tf_policy
@@ -22,14 +23,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 logging.set_verbosity(logging.INFO)
-logging.info("Testing, 1,2,3")
 
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 tf.compat.v1.enable_v2_behavior()
 
 ## Hyperparams
-num_iterations = 10000
+num_iterations = 40000
 
 batch_size = 64
 learning_rate = 1e-3
@@ -37,12 +37,12 @@ log_interval = 10
 
 num_eval_episodes = 5
 eval_interval = 1000
-train_steps_per_iteration = 1
+train_steps_per_iteration = 5
 
 #Params for collect
-initial_collect_steps = 1000
-collect_steps_per_iteration = 1
-replay_buffer_max_length = 100000
+initial_collect_episodes = 25
+collect_episodes_per_iteration = 2
+replay_buffer_max_length = 10000
 
 # Params for checkpointing during training
 train_checkpoint_interval = 5000
@@ -93,11 +93,11 @@ def run():
         max_length=replay_buffer_max_length,
     )
 
-    collect_driver = dynamic_step_driver.DynamicStepDriver(
-        tf_env,
-        agent.collect_policy,
-        observers=[replay_buffer.add_batch] + train_metrics,
-        num_steps=collect_steps_per_iteration,
+    collect_driver = dynamic_episode_driver.DynamicEpisodeDriver(
+      tf_env,
+      agent.collect_policy,
+      observers=[replay_buffer.add_batch] + train_metrics,
+      num_episodes=2,
     )
 
     train_checkpointer = common.Checkpointer(
@@ -129,17 +129,17 @@ def run():
         tf_env.time_step_spec(), tf_env.action_spec())
 
     print("Focus game so that client can drive:")
-    for i in list(range(4))[::-1]:
+    for i in reversed(range(4)):
       print(i+1)
       time.sleep(1)
     
-    logging.info("Filling buffer with %d steps with random agent", initial_collect_steps)
+    logging.info("Running %d runs to seed with random memories", initial_collect_episodes)
 
-    dynamic_step_driver.DynamicStepDriver(
-        tf_env,
-        random_policy,
-        observers=[replay_buffer.add_batch] + train_metrics,
-        num_steps=initial_collect_steps
+    dynamic_episode_driver.DynamicEpisodeDriver(
+      tf_env,
+      random_policy,
+      observers=[replay_buffer.add_batch] + train_metrics,
+      num_episodes=initial_collect_episodes,
     ).run()
 
     train_summary_writer = tf.summary.create_file_writer(train_dir)

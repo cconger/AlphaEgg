@@ -71,7 +71,7 @@ class TrackManiaInterface():
 
     PressKey(R)
     PressKey(Enter)
-    time.sleep(1)
+    time.sleep(1.5)
     ReleaseKey(R)
     ReleaseKey(Enter)
 

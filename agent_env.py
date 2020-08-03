@@ -14,7 +14,7 @@ class TMAgentEnv(py_environment.PyEnvironment):
         shape=(), dtype=np.int32, minimum=0, maximum=8, name='action')
     self._observation_spec = array_spec.BoundedArraySpec(
         shape=(360, 128, 3), dtype=np.float32, minimum=0, maximum=1.0, name='observation')
-    self._env = TrackManiaEnv()
+    self._env = TrackManiaEnv(60)
 
   def __enter__(self):
     self._env.__enter__()
@@ -42,4 +42,4 @@ class TMAgentEnv(py_environment.PyEnvironment):
     if done:
       return ts.termination(obs, reward)
 
-    return ts.transition(obs, reward=reward, discount=0.3)
+    return ts.transition(obs, reward=reward, discount=1)
